@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rent vs. Sell — Year-by-Year Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Spline+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#f4efe6;--paper-2:#ece4d6;--card:#fbf8f1;--ink:#1f2a37;--ink-soft:#54606e;--line:#d8cdba;
+    --gold:#a9762f;--sell:#2f6f54;--rent:#a8482f;--shadow:14px 14px 0 rgba(31,42,55,.05);}
+  *{box-sizing:border-box;}
+  body{margin:0;background:radial-gradient(1200px 600px at 85% -10%,#fbf7ef 0%,transparent 60%),var(--paper);
+    color:var(--ink);font-family:'Spline Sans',sans-serif;line-height:1.5;padding:26px 16px 60px;}
+  .wrap{max-width:1120px;margin:0 auto;}
+  header{border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:20px;}
+  .kicker{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);}
+  h1{font-family:'Fraunces',serif;font-weight:900;font-size:clamp(26px,4.6vw,42px);line-height:1.02;margin:.16em 0 .12em;letter-spacing:-.01em;}
+  .sub{color:var(--ink-soft);max-width:72ch;font-size:14px;}
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px;}
+  @media(max-width:860px){.summary{grid-template-columns:repeat(2,1fr);}}
+  .kpi{background:var(--card);border:1.5px solid var(--line);border-radius:5px;padding:13px 15px;box-shadow:var(--shadow);}
+  .kpi .lab{font-size:11px;letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase;font-family:'Spline Sans Mono',monospace;}
+  .kpi .val{font-family:'Fraunces',serif;font-weight:900;font-size:25px;line-height:1.05;margin-top:5px;}
+  .kpi .note{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .verdict{background:var(--ink);color:#fff;border-radius:5px;padding:15px 18px;margin-bottom:22px;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .verdict .big{font-family:'Fraunces',serif;font-weight:900;font-size:23px;}
+  .verdict .why{font-size:13.5px;opacity:.92;}
+  .sechead{font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:26px 0 10px;border-top:1px solid var(--line);padding-top:14px;}
+  .input-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+  @media(max-width:860px){.input-grid{grid-template-columns:1fr;}}
+  .panel{background:var(--card);border:1.5px solid var(--line);border-radius:5px;padding:16px 18px;box-shadow:var(--shadow);}
+  .panel h2{font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:0 0 4px;display:flex;align-items:center;gap:8px;}
+  .panel h2 .n{font-family:'Spline Sans Mono',monospace;font-size:11px;color:#fff;background:var(--ink);border-radius:50%;width:21px;height:21px;display:inline-grid;place-items:center;}
+  .panel .blurb{font-size:11.5px;color:var(--ink-soft);margin:0 0 10px;}
+  .crow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:5px 0;border-bottom:1px dotted var(--line);}
+  .crow:last-child{border-bottom:0;}
+  .crow label{font-size:12.5px;color:var(--ink);cursor:help;flex:1;}
+  .ig{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:3px;background:#fff;overflow:hidden;flex:0 0 auto;}
+  .ig:focus-within{border-color:var(--gold);}
+  .ig .pre,.ig .post{padding:0 7px;color:var(--ink-soft);font-family:'Spline Sans Mono',monospace;font-size:12px;background:var(--paper-2);align-self:stretch;display:flex;align-items:center;white-space:nowrap;}
+  .ig input{border:0;outline:0;padding:6px 7px;width:84px;text-align:right;font-family:'Spline Sans Mono',monospace;font-size:13px;color:var(--ink);background:#fff;-moz-appearance:textfield;}
+  .ig input::-webkit-outer-spin-button,.ig input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .ig.wide input{width:108px;}
+  select{font-family:'Spline Sans Mono',monospace;font-size:12.5px;padding:6px 7px;border:1.5px solid var(--line);border-radius:3px;background:#fff;color:var(--ink);}
+  .chk{display:flex;align-items:center;gap:8px;padding:7px 0;font-size:12.5px;color:var(--ink);cursor:pointer;}
+  .chk input{width:16px;height:16px;accent-color:var(--gold);}
+  .subbox{border:1px solid var(--line);border-radius:5px;padding:10px 12px;margin-top:10px;background:#fefdfa;}
+  .subbox .st{font-family:'Spline Sans Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+  .payout{font-size:12px;color:var(--ink-soft);margin-top:8px;padding-top:8px;border-top:1px dotted var(--line);}
+  .payout b{font-family:'Spline Sans Mono',monospace;color:var(--ink);}
+  .result-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;}
+  @media(max-width:860px){.result-grid{grid-template-columns:1fr;}}
+  .rcard{background:var(--card);border:1.5px solid var(--line);border-radius:5px;padding:16px 18px;box-shadow:var(--shadow);}
+  .rcard.full{grid-column:1 / -1;}
+  .rcard h3{font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:0 0 12px;color:var(--ink);}
+  .row{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:3.5px 0;}
+  .row span:last-child{font-family:'Spline Sans Mono',monospace;}
+  .row.muted{color:var(--ink-soft);}
+  .row.sub{padding-left:14px;font-size:12.5px;color:var(--ink-soft);}
+  .row.tot{border-top:1.5px solid var(--ink);margin-top:6px;padding-top:7px;font-weight:600;font-size:14px;}
+  .row.grand{border-top:2px solid var(--gold);margin-top:7px;padding-top:8px;}
+  .row.grand span{font-family:'Fraunces',serif;font-weight:900;font-size:18px;}
+  .row.grand span:first-child{font-size:14px;align-self:center;}
+  .pos{color:var(--sell);}.neg{color:var(--rent);}
+  .bars{margin:8px 0 6px;}
+  .bar-item{margin-bottom:12px;}
+  .bar-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;margin-bottom:5px;}
+  .bar-top .val{font-family:'Spline Sans Mono',monospace;font-size:15px;font-weight:600;}
+  .track{height:24px;background:var(--paper-2);border-radius:3px;overflow:hidden;border:1px solid var(--line);}
+  .fill{height:100%;width:0;transition:width .4s cubic-bezier(.2,.7,.2,1);}
+  .fill.sell{background:linear-gradient(90deg,#2f6f54,#3c8a68);}
+  .fill.rent{background:linear-gradient(90deg,#a8482f,#c4593c);}
+  .be{margin-top:12px;border:1.5px dashed var(--gold);border-radius:5px;padding:12px 14px;background:#fdfaf3;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;}
+  .be .num{font-family:'Fraunces',serif;font-weight:900;font-size:26px;color:var(--gold);line-height:1;}
+  .be .lab{font-size:12px;color:var(--ink-soft);max-width:46ch;}
+  .pill{display:inline-block;font-family:'Spline Sans Mono',monospace;font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--ink-soft);margin-left:6px;}
+  .pill.ok{color:var(--sell);border-color:var(--sell);}.pill.no{color:var(--rent);border-color:var(--rent);}
+  /* chart */
+  .chartwrap{width:100%;overflow:hidden;margin-bottom:6px;}
+  .legend{display:flex;gap:18px;font-size:12px;color:var(--ink-soft);margin:2px 0 10px;flex-wrap:wrap;}
+  .legend .dot{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle;}
+  .cap{font-size:12px;color:var(--ink-soft);line-height:1.5;margin-top:4px;}
+  /* table */
+  .tablescroll{overflow-x:auto;margin-top:4px;-webkit-overflow-scrolling:touch;}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:760px;}
+  th,td{padding:6px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;font-family:'Spline Sans Mono',monospace;}
+  th{font-family:'Spline Sans',sans-serif;font-size:11px;letter-spacing:.03em;color:var(--ink-soft);text-transform:uppercase;border-bottom:1.5px solid var(--ink);position:sticky;top:0;background:var(--card);}
+  th:first-child,td:first-child{text-align:center;}
+  tr.target td{background:#fbf3df;font-weight:600;}
+  tr.cross td{box-shadow:inset 0 2px 0 var(--gold);}
+  .no-mort .mort-col{display:none;}
+  td.lead-pos{color:var(--sell);}td.lead-neg{color:var(--rent);}
+  .badge{font-size:10px;padding:1px 5px;border-radius:99px;border:1px solid var(--line);}
+  footer{max-width:1120px;margin:24px auto 0;font-size:11.5px;color:var(--ink-soft);line-height:1.55;border-top:1px solid var(--line);padding-top:14px;}
+  .tag{display:inline-block;font-family:'Spline Sans Mono',monospace;font-size:10.5px;padding:2px 7px;border:1px solid var(--line);border-radius:99px;margin-right:5px;color:var(--ink-soft);}
+  /* enhancement utilities */
+  .hidden{display:none !important;}
+  .panel.span{grid-column:1 / -1;}
+  .panel.span{border-color:var(--gold);box-shadow:14px 14px 0 rgba(169,118,47,.07);}
+  .relo-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .relo-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px 26px;margin-top:6px;}
+  @media(max-width:860px){.relo-grid{grid-template-columns:1fr;}}
+  .cover-box{border:1px solid var(--line);border-radius:5px;padding:10px 12px;margin-top:10px;background:#fefdfa;}
+  .cover-box .st{font-family:'Spline Sans Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+  .note-warn{margin-top:12px;border:1px solid var(--gold);background:#fdf6e8;border-radius:5px;padding:9px 12px;font-size:11.5px;color:var(--ink);line-height:1.5;}
+  .note-warn b{font-family:'Spline Sans Mono',monospace;}
+  .row.credit span:last-child{color:var(--sell);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Property decision engine · rent vs. sell · year-by-year</div>
+    <h1>Rent it out, or sell &amp; invest — traced year by year</h1>
+    <p class="sub">Every landlord cost and selling cost is editable (hover any label for a plain-English note). Full mortgage support and employer relocation packages, with clawback exposure modeled. Below, watch both paths' wealth grow side by side, see exactly when — if ever — renting overtakes selling, and where your §121 tax break expires.</p>
+  </header>
+
+  <div class="summary">
+    <div class="kpi"><div class="lab">Net in hand if sold today</div><div class="val" id="kNet">—</div><div class="note">after all selling costs</div></div>
+    <div class="kpi"><div class="lab">Rental cash flow · yr 1</div><div class="val" id="kCf">—</div><div class="note" id="kCfNote">after tax</div></div>
+    <div class="kpi"><div class="lab">Cash-flow payback</div><div class="val" id="kPay">—</div><div class="note">to recover invested cash</div></div>
+    <div class="kpi"><div class="lab">Break-even appreciation</div><div class="val" id="kBe">—</div><div class="note">rent beats sell above this</div></div>
+  </div>
+  <div class="verdict"><span class="big" id="vWin">—</span><span class="why" id="vWhy">—</span></div>
+
+  <div class="sechead">Inputs — edit anything</div>
+  <div class="input-grid">
+
+    <div class="panel span">
+      <h2 class="relo-head"><span class="n">R</span> Relocation &amp; moving benefits <span class="pill">employer offer</span></h2>
+      <p class="blurb">Your relocation package changes both sides of the math. <b>Full-service</b> pays your home-<i>selling</i> costs — only worth something if you actually sell. A <b>lump sum</b> is cash you keep either way, and can invest if you rent. Pick what you'd take in each scenario; the two paths can use different packages.</p>
+      <div class="relo-grid">
+        <div>
+          <div class="crow"><label title="Sets the default MEA and lump-sum amounts from your company's benefit table.">Your status</label><select id="homeowner"><option value="home" selected>Homeowner</option><option value="non">Non-homeowner</option></select></div>
+          <div class="crow"><label title="What you'd take if you SELL. Full-service covers commission + standard closing costs; lump sum is flat cash but you pay your own selling costs out of it.">Package if you SELL</label><select id="sellPkg"><option value="full" selected>Full-service — costs paid</option><option value="lump">Lump sum</option><option value="none">None</option></select></div>
+          <div class="crow"><label title="What you'd take if you RENT it out. Home-selling help is wasted when you don't sell, so a lump sum is usually the better pick here.">Package if you RENT</label><select id="rentPkg"><option value="lump" selected>Lump sum</option><option value="full">Full-service</option><option value="none">None</option></select></div>
+          <div class="crow"><label title="How many months you expect to stay at the new employer. Clawbacks key off job tenure, NOT how long you hold the house: leave inside the window (24 mo full-service, 12 mo lump) and you repay the unserved fraction. Set high if you're confident you'll stay.">Months at new role</label><span class="ig"><input type="number" id="tenureMonths" value="36" step="1"><span class="post">mo</span></span></div>
+        </div>
+        <div>
+          <div id="lumpBox">
+            <div class="crow"><label title="Net lump-sum payout — your company pays the tax. Your table: $30k homeowner / $20k non-homeowner.">Lump-sum amount (net)</label><span class="ig wide"><span class="pre">$</span><input type="number" id="lumpSum" value="30000" step="1000"></span></div>
+          </div>
+          <div id="fullBox">
+            <div class="crow"><label title="Miscellaneous Expense Allowance — discretionary cash. Your table: $3,500 homeowner / $2,000 non-homeowner.">Misc. expense allowance (MEA)</label><span class="ig wide"><span class="pre">$</span><input type="number" id="mea" value="3500" step="500"></span></div>
+            <label class="chk" title="Your MEA is 'gross, not tax assisted' — it's taxable income, so what you keep is less. Leave checked to net it down at your ordinary rate."><input type="checkbox" id="meaTaxable" checked> MEA is taxable (not grossed up)</label>
+            <div class="cover-box">
+              <div class="st">Full-service covers these selling costs</div>
+              <label class="chk"><input type="checkbox" id="coverComm" checked> Agent commission</label>
+              <label class="chk"><input type="checkbox" id="coverClose" checked> Closing costs (seller side)</label>
+              <label class="chk"><input type="checkbox" id="coverTransfer" checked> Transfer tax</label>
+              <label class="chk"><input type="checkbox" id="coverConc"> Seller concessions</label>
+              <label class="chk"><input type="checkbox" id="coverPrep"> Pre-sale prep (repairs / staging / cleaning)</label>
+              <div class="crow"><label title="Cap on total company-paid selling costs. 0 = uncapped (covers the full standard cost).">Coverage cap (0 = none)</label><span class="ig wide"><span class="pre">$</span><input type="number" id="coverCap" value="0" step="1000"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note-warn" id="clawNote">Clawback windows apply — see below.</div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="n">1</span> Property &amp; tax profile</h2>
+      <p class="blurb">Drives depreciation, capital-gains, and net-proceeds math.</p>
+      <div class="crow"><label title="What the home is worth today.">Current market value</label><span class="ig wide"><span class="pre">$</span><input type="number" id="value" value="400000" step="5000"></span></div>
+      <div class="crow"><label title="What you originally paid — the base for cost basis.">Original purchase price</label><span class="ig wide"><span class="pre">$</span><input type="number" id="purchase" value="365000" step="5000"></span></div>
+      <div class="crow"><label title="Capital improvements added (renovations, not routine repairs). Adds to basis.">Capital improvements since</label><span class="ig wide"><span class="pre">$</span><input type="number" id="improvements" value="5000" step="500"></span></div>
+      <div class="crow"><label title="Share of value that is land. Land can't be depreciated; the building can.">Land portion of value</label><span class="ig"><input type="number" id="landPct" value="22" step="1"><span class="post">%</span></span></div>
+      <div class="crow"><label title="Filing status sets the §121 exclusion: $250k single / $500k married.">Filing status</label><select id="filing"><option value="single" selected>Single</option><option value="married">Married (joint)</option></select></div>
+      <div class="crow"><label title="Your top FEDERAL marginal rate on taxable rental profit and depreciation recapture (recapture capped at 25%). For 2026 single filers, 35% covers ~$256k–$641k of taxable income; 37% only starts above $640,600. NIIT (below) and the state rate are added on automatically — don't fold them in here.">Ordinary income tax rate (federal)</label><span class="ig"><input type="number" id="ordinary" value="35" step="1"><span class="post">%</span></span></div>
+      <div class="crow"><label title="Long-term cap-gains rate on the appreciation portion of a taxable sale.">Long-term cap-gains rate</label><span class="ig"><input type="number" id="ltcg" value="15" step="1"><span class="post">%</span></span></div>
+      <div class="crow"><label title="State income-tax rate on the gain and depreciation recapture at sale. NJ tops out around 6.37% at your income; NJ also taxes a nonresident's NJ-source gain. 0 if N/A.">State tax rate (gain &amp; recapture)</label><span class="ig"><input type="number" id="stateGains" value="6.37" step="0.5"><span class="post">%</span></span></div>
+      <label class="chk" title="3.8% surtax on investment gains for higher earners."><input type="checkbox" id="niit" checked> Apply 3.8% net investment income tax</label>
+      <label class="chk" title="Lived in it as primary home 2 of last 5 yrs — unlocks §121."><input type="checkbox" id="s121" checked> Qualifies for §121 primary-residence exclusion</label>
+      <div class="crow"><label title="After moving out, §121 still applies if sold within this many years (≈3).">§121 valid if sold within</label><span class="ig"><input type="number" id="s121Years" value="3" step="1"><span class="post">yr</span></span></div>
+
+      <div class="subbox">
+        <div class="st">Mortgage — leave balance 0 if owned outright</div>
+        <div class="crow"><label title="Loan balance remaining. Paid off from proceeds at sale.">Loan balance</label><span class="ig wide"><span class="pre">$</span><input type="number" id="mortgageBalance" value="0" step="5000"></span></div>
+        <div class="crow"><label title="Annual interest rate on the loan.">Interest rate</label><span class="ig"><input type="number" id="mortgageRate" value="6.5" step="0.125"><span class="post">%</span></span></div>
+        <div class="crow"><label title="Years left to pay off (the amortization period for the payment).">Term remaining</label><span class="ig"><input type="number" id="mortgageTerm" value="30" step="1"><span class="post">yr</span></span></div>
+        <div class="crow"><label title="Know your exact payment? Enter it to override the computed one. 0 = auto-calculate.">Monthly P&amp;I override</label><span class="ig wide"><span class="pre">$</span><input type="number" id="mpayOverride" value="0" step="50"></span></div>
+        <div class="payout" id="mPayOut">Monthly payment (P&amp;I): <b>$0</b> · interest is deductible, principal builds equity</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="n">2</span> If you RENT — the costs</h2>
+      <p class="blurb">Everything a landlord pays, per year.</p>
+      <div class="crow"><label title="Monthly rent you'd charge.">Monthly rent</label><span class="ig"><span class="pre">$</span><input type="number" id="rent" value="2700" step="50"><span class="post">/mo</span></span></div>
+      <div class="crow"><label title="How fast rent rises each year.">Annual rent growth</label><span class="ig"><input type="number" id="rentGrowth" value="3" step="0.25"><span class="post">%</span></span></div>
+      <div class="crow"><label title="Monthly association dues (exterior, common areas, amenities, master insurance).">HOA dues</label><span class="ig"><span class="pre">$</span><input type="number" id="hoa" value="400" step="25"><span class="post">/mo</span></span></div>
+      <div class="crow"><label title="Association fees to register/operate as a rental + tenant move-in/out fees.">HOA rental / processing fees</label><span class="ig"><span class="pre">$</span><input type="number" id="hoaRentalFee" value="150" step="25"><span class="post">/yr</span></span></div>
+      <div class="crow"><label title="Town landlord registration/license + inspection (common in NJ).">Municipal rental registration</label><span class="ig"><span class="pre">$</span><input type="number" id="registration" value="100" step="25"><span class="post">/yr</span></span></div>
+      <div class="crow"><label title="Annual property tax. Fully deductible against rental income.">Property tax</label><span class="ig"><span class="pre">$</span><input type="number" id="propTax" value="8000" step="100"><span class="post">/yr</span></span></div>
+      <div class="crow"><label title="Landlord (walls-in) + liability + lost-rent policy. Pricier than homeowner's.">Landlord insurance</label><span class="ig"><span class="pre">$</span><input type="number" id="insurance" value="1200" step="100"><span class="post">/yr</span></span></div>
+      <div class="crow"><label title="Routine repairs. ~1% of value or ~10% of rent. Deductible.">Repairs &amp; maintenance</label><span class="ig"><span class="pre">$</span><input type="number" id="repairsMaint" value="2500" step="100"><span class="post">/yr</span></span></div>
+      <div class="crow"><label title="Reserve for big replacements (HVAC, roof, flooring). Not deductible now — depreciated when spent.">Capital reserve (CapEx)</label><span class="ig"><span class="pre">$</span><input type="number" id="capex" value="1500" step="100"><span class="post">/yr</span></span></div>
+      <div class="crow"><label title="Rent lost between tenants. Typically 5–8%.">Vacancy allowance</label><span class="ig"><input type="number" id="vacancy" value="6" step="0.5"><span class="post">% rent</span></span></div>
+      <div class="crow"><label title="Manager fee — essential if out of state. ~8–10% of collected rent.">Property management</label><span class="ig"><input type="number" id="mgmtPct" value="9" step="0.5"><span class="post">% rent</span></span></div>
+      <div class="crow"><label title="Fee to find/screen a new tenant, ~1 month's rent, each new lease.">Leasing fee (per new tenant)</label><span class="ig"><input type="number" id="leaseMonths" value="1" step="0.25"><span class="post">mo rent</span></span></div>
+      <div class="crow"><label title="Average tenant stay — spreads the leasing fee.">Avg tenant stays</label><span class="ig"><input type="number" id="avgTenancy" value="2" step="0.5"><span class="post">yr</span></span></div>
+      <div class="crow"><label title="Utilities you (not the tenant) pay. Often $0 for a condo.">Landlord-paid utilities</label><span class="ig"><span class="pre">$</span><input type="number" id="landlordUtil" value="0" step="100"><span class="post">/yr</span></span></div>
+      <div class="crow"><label title="Lease prep, eviction exposure, Schedule-E tax prep. Deductible.">Legal &amp; accounting</label><span class="ig"><span class="pre">$</span><input type="number" id="legal" value="300" step="50"><span class="post">/yr</span></span></div>
+      <div class="crow"><label title="How fast these costs rise each year.">Cost inflation</label><span class="ig"><input type="number" id="costInfl" value="3" step="0.25"><span class="post">%</span></span></div>
+      <label class="chk" title="High earners (MAGI &gt; ~$150k) can't deduct rental losses vs salary now; they release at sale. Uncheck if lower income."><input type="checkbox" id="suspendLoss" checked> High earner — suspend rental losses until sale</label>
+    </div>
+
+    <div class="panel">
+      <h2><span class="n">3</span> If you SELL — the costs</h2>
+      <p class="blurb">One-time costs from sale price to cash in hand.</p>
+      <div class="crow"><label title="Total agent commission (listing + buyer side). Traditionally 5–6%.">Agent commission (total)</label><span class="ig"><input type="number" id="commissionPct" value="5.5" step="0.25"><span class="post">%</span></span></div>
+      <div class="crow"><label title="Credits to the buyer toward their costs/repairs to close.">Seller concessions</label><span class="ig"><input type="number" id="concessionPct" value="0" step="0.25"><span class="post">%</span></span></div>
+      <div class="crow"><label title="Title, attorney, settlement/escrow, deed prep, recording.">Closing costs (seller side)</label><span class="ig"><input type="number" id="closingPct" value="1" step="0.25"><span class="post">%</span></span></div>
+      <div class="crow"><label title="State/county transfer tax. NJ Realty Transfer Fee ≈ 1% here.">Transfer tax</label><span class="ig"><input type="number" id="transferPct" value="1" step="0.25"><span class="post">%</span></span></div>
+      <div class="crow"><label title="Pre-sale fixes (paint, minor updates, repairs).">Pre-sale repairs/improvements</label><span class="ig wide"><span class="pre">$</span><input type="number" id="repairsSale" value="3000" step="500"></span></div>
+      <div class="crow"><label title="Rented furniture/decor for photos &amp; showings.">Staging</label><span class="ig wide"><span class="pre">$</span><input type="number" id="staging" value="1000" step="250"></span></div>
+      <div class="crow"><label title="Yard cleanup. Usually minimal for a condo.">Landscaping / curb appeal</label><span class="ig wide"><span class="pre">$</span><input type="number" id="landscaping" value="0" step="250"></span></div>
+      <div class="crow"><label title="Deep clean, carpets, make-ready.">Cleaning / make-ready</label><span class="ig wide"><span class="pre">$</span><input type="number" id="cleaning" value="500" step="100"></span></div>
+    </div>
+
+    <div class="panel">
+      <h2><span class="n">4</span> Comparison assumptions</h2>
+      <p class="blurb">How the two paths race over time.</p>
+      <div class="crow"><label title="The year the headline verdict focuses on — highlighted in the table.">Target holding period</label><span class="ig"><input type="number" id="horizon" value="7" step="1"><span class="post">yr</span></span></div>
+      <div class="crow"><label title="How many years the chart and table project out.">Project chart/table out to</label><span class="ig"><input type="number" id="tableYears" value="15" step="1"><span class="post">yr</span></span></div>
+      <div class="crow"><label title="How fast the home's value grows each year. (East Brunswick recently ~5%.)">Home appreciation</label><span class="ig"><input type="number" id="appreciation" value="4" step="0.25"><span class="post">%</span></span></div>
+      <div class="crow"><label title="What a diversified portfolio earns on the sale proceeds (~7% long-run).">Investment return</label><span class="ig"><input type="number" id="invReturn" value="7" step="0.25"><span class="post">%</span></span></div>
+    </div>
+  </div>
+
+  <div class="sechead">Snapshot — your target year</div>
+  <div class="result-grid">
+    <div class="rcard">
+      <h3>If you SELL today → cash in hand</h3>
+      <div class="row"><span>Sale price</span><span id="sSale">—</span></div>
+      <div class="row sub"><span>− Agent commission</span><span id="sComm">—</span></div>
+      <div class="row sub"><span>− Seller concessions</span><span id="sConc">—</span></div>
+      <div class="row sub"><span>− Closing costs</span><span id="sClose">—</span></div>
+      <div class="row sub"><span>− Transfer tax</span><span id="sTransfer">—</span></div>
+      <div class="row sub"><span>− Repairs / staging / landscaping / cleaning</span><span id="sFixup">—</span></div>
+      <div class="row tot"><span>Total selling costs</span><span id="sTotalCosts">—</span></div>
+      <div class="row sub"><span>− Mortgage payoff</span><span id="sPayoff">—</span></div>
+      <div class="row sub"><span>Taxable gain after §121</span><span id="sGain">—</span></div>
+      <div class="row sub"><span>− Capital-gains tax</span><span id="sCgTax">—</span></div>
+      <div class="row sub credit hidden" id="rowReloCredit"><span>+ Relocation: company-paid selling costs</span><span id="sReloCredit">—</span></div>
+      <div class="row sub credit hidden" id="rowReloMea"><span>+ Relocation: MEA (after tax)</span><span id="sReloMea">—</span></div>
+      <div class="row sub credit hidden" id="rowReloLump"><span>+ Relocation: lump sum (net)</span><span id="sReloLump">—</span></div>
+      <div class="row sub hidden" id="rowReloClaw"><span>− Relocation clawback (prorated, early exit)</span><span id="sReloClaw">—</span></div>
+      <div class="row grand"><span>NET IN YOUR HAND</span><span id="sNet" class="pos">—</span></div>
+    </div>
+    <div class="rcard">
+      <h3>If you RENT → year-1 cash flow</h3>
+      <div class="row"><span>Gross annual rent</span><span id="rGross">—</span></div>
+      <div class="row sub"><span>− Vacancy</span><span id="rVac">—</span></div>
+      <div class="row muted"><span>Effective rent collected</span><span id="rEff">—</span></div>
+      <div class="row sub"><span>− HOA dues</span><span id="rHoa">—</span></div>
+      <div class="row sub"><span>− HOA rental + municipal fees</span><span id="rFees">—</span></div>
+      <div class="row sub"><span>− Property tax</span><span id="rTax">—</span></div>
+      <div class="row sub"><span>− Insurance</span><span id="rIns">—</span></div>
+      <div class="row sub"><span>− Repairs &amp; maintenance</span><span id="rRep">—</span></div>
+      <div class="row sub"><span>− Capital reserve</span><span id="rCap">—</span></div>
+      <div class="row sub"><span>− Property management</span><span id="rMgmt">—</span></div>
+      <div class="row sub"><span>− Leasing fee (amortized)</span><span id="rLease">—</span></div>
+      <div class="row sub"><span>− Utilities + legal</span><span id="rOther">—</span></div>
+      <div class="row sub"><span>− Mortgage P&amp;I</span><span id="rMort">—</span></div>
+      <div class="row tot"><span>Pre-tax cash flow</span><span id="rPretax">—</span></div>
+      <div class="row grand"><span>AFTER-TAX CASH FLOW</span><span id="rAtcf">—</span></div>
+      <div class="row muted"><span>Cash yield on today's value</span><span id="rYield">—</span></div>
+    </div>
+    <div class="rcard">
+      <h3>Tax picture &amp; payback</h3>
+      <div class="row"><span>Annual depreciation deduction</span><span id="tDep">—</span></div>
+      <div class="row muted"><span>Income tax on rental (yr 1)</span><span id="tTax">—</span></div>
+      <div class="row sub"><span>Depreciation through target yr</span><span id="tDepCum">—</span></div>
+      <div class="row sub"><span>Suspended losses banked</span><span id="tSusp">—</span></div>
+      <div class="row sub"><span>Recapture at sale (≤25%)</span><span id="tRecap">—</span></div>
+      <div class="row"><span>§121 status at target yr</span><span id="tS121">—</span></div>
+      <div class="row tot"><span>Cash-flow payback</span><span id="tPay">—</span></div>
+    </div>
+    <div class="rcard">
+      <h3>Wealth at year <span id="dN">7</span></h3>
+      <div class="bars">
+        <div class="bar-item"><div class="bar-top"><span style="color:var(--sell);font-weight:600">Sell now &amp; invest</span><span class="val" id="dSell">—</span></div><div class="track"><div class="fill sell" id="bSell"></div></div></div>
+        <div class="bar-item"><div class="bar-top"><span style="color:var(--rent);font-weight:600">Keep, rent, sell later</span><span class="val" id="dRent">—</span></div><div class="track"><div class="fill rent" id="bRent"></div></div></div>
+      </div>
+      <div class="row muted"><span>Net sale proceeds in year <span id="dN2">7</span></span><span id="dNetN">—</span></div>
+      <div class="row muted"><span>+ Reinvested rental cash flows</span><span id="dFv">—</span></div>
+      <div class="row muted hidden" id="rowDRelo"><span>+ Relocation cash, invested to date</span><span id="dRelo">—</span></div>
+      <div class="be"><div class="lab">Break-even appreciation — rent only wins above this:</div><div class="num" id="dBe">—</div></div>
+    </div>
+  </div>
+
+  <div class="sechead">Year-by-year — the two paths traced over time</div>
+  <div class="rcard full">
+    <div class="legend">
+      <span><span class="dot" style="background:var(--sell)"></span>Sell now &amp; invest the proceeds</span>
+      <span><span class="dot" style="background:var(--rent)"></span>Keep, rent, then sell that year</span>
+      <span><span class="dot" style="background:var(--gold)"></span>Your target year</span>
+    </div>
+    <div class="chartwrap" id="chart"></div>
+    <p class="cap" id="chartCap">—</p>
+    <div class="tablescroll">
+      <table id="tbl">
+        <thead><tr>
+          <th>Yr</th><th>Home value</th>
+          <th class="mort-col">Loan bal</th><th class="mort-col">Equity</th>
+          <th>After-tax CF</th><th>Reinvested $</th><th>Net if sold</th>
+          <th>RENT wealth</th><th>SELL wealth</th><th>Lead</th><th>§121</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="cap">“RENT wealth” = what you'd have if you rented through that year then sold (net sale proceeds + reinvested cash flows). “SELL wealth” = today's net proceeds invested at your return rate. “Lead” is rent minus sell — green means renting is ahead.</p>
+  </div>
+
+  <footer>
+    <span class="tag">model, not advice</span><span class="tag">verify with a CPA</span><span class="tag">relocation modeled</span><span class="tag">high-earner tax</span>
+    Simplifications: depreciation = (basis − land) ÷ 27.5 (capped at the building value); high-earner rental losses are suspended and released against the sale gain; §121 excludes appreciation if sold within your window, while depreciation is always recaptured (unrecaptured §1250) at up to 25% federal, plus NIIT and state. Commission/closing/transfer/concessions reduce the taxable gain; repairs/staging reduce cash but not the gain. Mortgage interest is deductible and amortized; principal builds equity. The 3.8% NIIT, when enabled, is applied to the capital gain, the recapture, AND any positive net rental profit (it's net investment income for high earners). The "ordinary rate" is your FEDERAL marginal rate; the state field covers the gain and recapture. One gap: state income tax on positive annual rental profit isn't separately broken out — immaterial while the rental runs at a tax loss (the usual early-year case), but nudge the ordinary rate up a few points if you want to capture it in profitable years. Confirm specifics with a tax professional.
+    <br><br>Relocation benefits: each path picks its own package because they are asymmetric. A full-service package's home-selling coverage (commission/closing/transfer/etc.) only has value if you actually sell, so on the sell side it is added back as a credit against those exact costs — the costs still show as negatives, the credit nets them toward zero. The MEA is netted at your ordinary rate when marked taxable. A lump sum is cash either way: it boosts sale proceeds on the sell side or is invested on the rent side. The model treats full-service reimbursements as roughly tax-neutral via the employer gross-up; in reality gross-up is imperfect, so treat the sell-side benefit as a near-upper-bound. Clawback: set your expected months at the new employer; if that falls inside the package's window (24 months full-service, 12 months lump sum), the unserved fraction of the benefit is prorated and subtracted from that path, since you would owe it back on an early exit. The clawback keys off job tenure, not how long you hold the house.
+  </footer>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const show=(id,on)=>{const el=$(id); if(el) el.classList.toggle('hidden',!on);};
+  const fields=['value','purchase','improvements','landPct','mortgageBalance','mortgageRate','mortgageTerm','mpayOverride',
+    'ordinary','ltcg','stateGains','s121Years','rent','rentGrowth','hoa','hoaRentalFee','registration','propTax',
+    'insurance','repairsMaint','capex','vacancy','mgmtPct','leaseMonths','avgTenancy','landlordUtil','legal',
+    'costInfl','commissionPct','concessionPct','closingPct','transferPct','repairsSale','staging','landscaping',
+    'cleaning','horizon','tableYears','appreciation','invReturn',
+    'mea','lumpSum','coverCap','tenureMonths'];
+  const checks=['niit','s121','suspendLoss','meaTaxable','coverComm','coverClose','coverTransfer','coverConc','coverPrep'];
+  const fmt=n=>(n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString('en-US');
+  const fmtK=n=>'$'+Math.round(n/1000)+'k';
+  const pct=n=>n.toFixed(2)+'%';
+
+  function P(){
+    const v={}; fields.forEach(f=>v[f]=parseFloat($(f).value)||0); checks.forEach(c=>v[c]=$(c).checked);
+    return {value:v.value,purchase:v.purchase,improvements:v.improvements,landPct:v.landPct/100,
+      mortgageBalance:v.mortgageBalance,mortgageRate:v.mortgageRate/100,mortgageTerm:v.mortgageTerm,mpayOverride:v.mpayOverride,
+      filing:$('filing').value,ordinary:v.ordinary/100,ltcg:v.ltcg/100,niit:v.niit,stateGains:v.stateGains/100,
+      s121:v.s121,s121Years:v.s121Years,rent:v.rent,rentGrowth:v.rentGrowth/100,vacancy:v.vacancy/100,mgmtPct:v.mgmtPct/100,
+      leaseMonths:v.leaseMonths,avgTenancy:v.avgTenancy,hoa:v.hoa,hoaRentalFee:v.hoaRentalFee,registration:v.registration,
+      propTax:v.propTax,insurance:v.insurance,repairsMaint:v.repairsMaint,capex:v.capex,landlordUtil:v.landlordUtil,
+      legal:v.legal,costInfl:v.costInfl/100,horizon:Math.max(1,Math.round(v.horizon)),tableYears:Math.max(1,Math.round(v.tableYears)),
+      appreciation:v.appreciation/100,invReturn:v.invReturn/100,suspendLoss:v.suspendLoss,
+      commissionPct:v.commissionPct/100,concessionPct:v.concessionPct/100,closingPct:v.closingPct/100,transferPct:v.transferPct/100,
+      repairsSale:v.repairsSale,staging:v.staging,landscaping:v.landscaping,cleaning:v.cleaning,
+      homeowner:$('homeowner').value,sellPkg:$('sellPkg').value,rentPkg:$('rentPkg').value,
+      mea:v.mea,meaTaxable:v.meaTaxable,lumpSum:v.lumpSum,
+      coverComm:v.coverComm,coverClose:v.coverClose,coverTransfer:v.coverTransfer,coverConc:v.coverConc,coverPrep:v.coverPrep,coverCap:v.coverCap,
+      tenureMonths:Math.max(0,Math.round(v.tenureMonths))};
+  }
+
+  function payment(p){
+    if(p.mpayOverride>0) return p.mpayOverride;
+    if(p.mortgageBalance>0 && p.mortgageTerm>0){const r=p.mortgageRate/12,n=p.mortgageTerm*12; return p.mortgageBalance*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);}
+    return 0;
+  }
+  function amortYear(bal,rate,pay){
+    if(bal<=0||pay<=0) return {interest:0,principal:0,end:Math.max(bal,0)};
+    const r=rate/12; let it=0,pr=0,b=bal;
+    for(let i=0;i<12;i++){const interest=b*r; let principal=Math.min(pay-interest,b); if(principal<0)principal=0; b-=principal; it+=interest; pr+=principal; if(b<=0)break;}
+    return {interest:it,principal:pr,end:Math.max(b,0)};
+  }
+
+  // core simulation: returns netToday, year-1 detail, and rows[] (1..years) for appreciation g
+  function simulate(p,g,years){
+    const basis=p.purchase+p.improvements, building=basis*(1-p.landPct), dep=building/27.5;
+    const excl=p.filing==='single'?250000:500000, cg=p.ltcg+(p.niit?0.038:0)+p.stateGains;
+    const sp=p.value;
+    const comm=sp*p.commissionPct,cl=sp*p.closingPct,tr=sp*p.transferPct,cc=sp*p.concessionPct;
+    const fix=p.repairsSale+p.staging+p.landscaping+p.cleaning;
+    // --- Relocation benefits ---
+    const meaNet=p.mea*(p.meaTaxable?(1-p.ordinary):1);
+    let sellReloCredit=0,sellMea=0,sellLump=0;
+    if(p.sellPkg==='full'){
+      let cov=(p.coverComm?comm:0)+(p.coverClose?cl:0)+(p.coverTransfer?tr:0)+(p.coverConc?cc:0)+(p.coverPrep?fix:0);
+      if(p.coverCap>0)cov=Math.min(cov,p.coverCap);
+      sellReloCredit=cov; sellMea=meaNet;
+    }else if(p.sellPkg==='lump'){ sellLump=p.lumpSum; }
+    const sellReloGross=sellReloCredit+sellMea+sellLump;
+    let rentReloGross=0;
+    if(p.rentPkg==='full')rentReloGross=meaNet; else if(p.rentPkg==='lump')rentReloGross=p.lumpSum;
+    // Clawback: leave the EMPLOYER before the window and you repay the unserved fraction (prorated).
+    // Keys off job tenure (tenureMonths), not how long you hold the house.
+    const clawWin=pk=>pk==='full'?24:(pk==='lump'?12:0);
+    const retain=w=>w>0?Math.min(1,Math.max(0,p.tenureMonths)/w):1;
+    const sellRetain=retain(clawWin(p.sellPkg)), rentRetain=retain(clawWin(p.rentPkg));
+    const sellClaw=sellReloGross*(1-sellRetain), rentClaw=rentReloGross*(1-rentRetain);
+    const sellRelo=sellReloGross-sellClaw, rentRelo=rentReloGross-rentClaw;
+    const gainT=(sp-(comm+cl+tr+cc))-basis, taxT=Math.max(0,gainT-(p.s121?excl:0));
+    const netToday=sp-(comm+cl+tr+cc+fix)-p.mortgageBalance-taxT*cg+sellRelo;
+    const mpay=payment(p);
+    let bal=p.mortgageBalance, invest=0, cumDep=0, susp=0;
+    const rows=[]; let y1=null;
+    for(let t=1;t<=years;t++){
+      const infl=Math.pow(1+p.costInfl,t-1), grow=Math.pow(1+p.rentGrowth,t-1);
+      const rent=p.rent*12*grow, vac=rent*p.vacancy, eff=rent-vac;
+      const mgmt=eff*p.mgmtPct, leasing=(p.leaseMonths/Math.max(p.avgTenancy,0.5))*p.rent*grow;
+      const hoa=p.hoa*12*infl,hoaF=p.hoaRentalFee*infl,reg=p.registration*infl,ptax=p.propTax*infl,ins=p.insurance*infl;
+      const rep=p.repairsMaint*infl,capx=p.capex*infl,util=p.landlordUtil*infl,leg=p.legal*infl;
+      const am=amortYear(bal,p.mortgageRate,mpay); bal=am.end;
+      const mc=mpay>0?mpay*12:0;
+      const opc=hoa+hoaF+reg+ptax+ins+rep+capx+util+leg+mgmt+leasing;
+      const pretax=eff-opc-mc;
+      const depYr=Math.min(dep,Math.max(building-cumDep,0));
+      const ded=(hoa+hoaF+reg+ptax+ins+rep+util+leg+mgmt+leasing)+am.interest+depYr;
+      cumDep+=depYr;
+      const taxable=eff-ded;
+      const ordEff=p.ordinary+(p.niit?0.038:0); // high earners owe 3.8% NIIT on net rental profit too
+      let tax; if(taxable>=0){tax=taxable*ordEff;} else {if(p.suspendLoss){tax=0;susp+=-taxable;}else{tax=taxable*p.ordinary;}}
+      const atcf=pretax-tax;
+      invest=invest*(1+p.invReturn)+atcf;
+      const spt=p.value*Math.pow(1+g,t);
+      const ct=spt*p.commissionPct,clt=spt*p.closingPct,trt=spt*p.transferPct,cct=spt*p.concessionPct;
+      const ar=spt-(ct+clt+trt+cct), adj=basis-cumDep, tg=ar-adj;
+      const s121t=p.s121&&(t<=p.s121Years);
+      const rec=cumDep;
+      let tgamt=s121t?rec:rec+Math.max(tg-rec,0);
+      tgamt=Math.max(0,tgamt-susp);
+      const recRate=Math.min(0.25,p.ordinary)+(p.niit?0.038:0)+p.stateGains, recT=Math.min(rec,tgamt), apT=Math.max(0,tgamt-rec);
+      const tsale=recT*recRate+apT*cg;
+      const netSaleT=spt-(ct+clt+trt+cct+fix)-bal-tsale;
+      const gf=Math.pow(1+p.invReturn,t);
+      const reloFV=rentRelo*gf;
+      const rentW=netSaleT+invest+reloFV, sellW=netToday*gf;
+      rows.push({t,value:spt,bal,equity:spt-bal,atcf,invest,netSaleT,rentW,sellW,lead:rentW-sellW,s121t,cumDep,susp,recapture:rec,reloFV});
+      if(t===1)y1={rent,vac,eff,mgmt,leasing,hoa,hoaF,reg,ptax,ins,rep,capx,util,leg,pretax,taxable,tax,atcf,mc,comm,cl,tr,cc,fix,gainT:taxT,cgT:taxT*cg};
+    }
+    return {netToday,rows,y1,depAnnual:dep,comm,cl,tr,cc,fix,taxableToday:taxT,cgTaxToday:taxT*cg,
+      sellReloCredit,sellMea,sellLump,sellRelo,rentRelo,meaNet,sellClaw,rentClaw,sellRetain,rentRetain};
+  }
+
+  function paybackYears(p){
+    const basis=p.purchase+p.improvements, building=basis*(1-p.landPct), dep=building/27.5;
+    const init=p.purchase+p.improvements-p.mortgageBalance, mpay=payment(p);
+    let bal=p.mortgageBalance, cum=0, cumDep=0;
+    for(let t=1;t<=50;t++){
+      const infl=Math.pow(1+p.costInfl,t-1), grow=Math.pow(1+p.rentGrowth,t-1);
+      const rent=p.rent*12*grow, eff=rent-rent*p.vacancy, mgmt=eff*p.mgmtPct;
+      const leasing=(p.leaseMonths/Math.max(p.avgTenancy,0.5))*p.rent*grow;
+      const opc=(p.hoa*12+p.hoaRentalFee+p.registration+p.propTax+p.insurance+p.repairsMaint+p.capex+p.landlordUtil+p.legal)*infl+mgmt+leasing;
+      const am=amortYear(bal,p.mortgageRate,mpay); bal=am.end;
+      const mc=mpay>0?mpay*12:0, pretax=eff-opc-mc;
+      const depYr=Math.min(dep,Math.max(building-cumDep,0)); cumDep+=depYr;
+      const ded=(opc-p.capex*infl)+am.interest+depYr, taxable=eff-ded;
+      const tax=taxable>=0?taxable*(p.ordinary+(p.niit?0.038:0)):(p.suspendLoss?0:taxable*p.ordinary);
+      cum+=pretax-tax; if(cum>=init) return t;
+    }
+    return null;
+  }
+  function breakeven(p){
+    let lo=-0.05,hi=0.35;
+    for(let i=0;i<80;i++){const m=(lo+hi)/2; const s=simulate(p,m,p.horizon); const last=s.rows[s.rows.length-1]; if(last.rentW<last.sellW)lo=m; else hi=m;}
+    return (lo+hi)/2;
+  }
+
+  function buildChart(rows,horizon){
+    const W=760,H=300,mL=58,mR=14,mT=14,mB=30, pW=W-mL-mR, pH=H-mT-mB;
+    const yrs=rows.length, maxV=Math.max(...rows.map(r=>Math.max(r.rentW,r.sellW)),1);
+    const X=t=>mL+(yrs<=1?0:(t-1)/(yrs-1)*pW), Y=v=>mT+(1-v/maxV)*pH;
+    let g='';
+    // gridlines + y labels
+    for(let i=0;i<=4;i++){const v=maxV*i/4, y=Y(v);
+      g+=`<line x1="${mL}" y1="${y.toFixed(1)}" x2="${W-mR}" y2="${y.toFixed(1)}" stroke="#d8cdba" stroke-width="1"/>`;
+      g+=`<text x="${mL-8}" y="${(y+4).toFixed(1)}" text-anchor="end" font-size="11" fill="#54606e" font-family="'Spline Sans Mono',monospace">${fmtK(v)}</text>`;}
+    // x labels
+    const step=Math.max(1,Math.ceil(yrs/8));
+    for(let i=0;i<yrs;i+=step){const t=rows[i].t, x=X(t);
+      g+=`<text x="${x.toFixed(1)}" y="${H-10}" text-anchor="middle" font-size="11" fill="#54606e" font-family="'Spline Sans Mono',monospace">${t}</text>`;}
+    g+=`<text x="${mL+pW/2}" y="${H-10}" text-anchor="middle" font-size="0" fill="#54606e"></text>`;
+    // target year marker
+    if(horizon<=yrs){const x=X(horizon);
+      g+=`<line x1="${x.toFixed(1)}" y1="${mT}" x2="${x.toFixed(1)}" y2="${mT+pH}" stroke="#a9762f" stroke-width="1.5" stroke-dasharray="4 3"/>`;}
+    // lines
+    const sellPts=rows.map(r=>`${X(r.t).toFixed(1)},${Y(r.sellW).toFixed(1)}`).join(' ');
+    const rentPts=rows.map(r=>`${X(r.t).toFixed(1)},${Y(r.rentW).toFixed(1)}`).join(' ');
+    g+=`<polyline points="${sellPts}" fill="none" stroke="#2f6f54" stroke-width="2.5"/>`;
+    g+=`<polyline points="${rentPts}" fill="none" stroke="#a8482f" stroke-width="2.5"/>`;
+    // crossover dot
+    let cross=null;
+    for(let i=1;i<rows.length;i++){if((rows[i-1].lead<0)!==(rows[i].lead<0)){cross=rows[i];break;}}
+    if(cross){g+=`<circle cx="${X(cross.t).toFixed(1)}" cy="${Y(cross.rentW).toFixed(1)}" r="5" fill="#a9762f" stroke="#fff" stroke-width="1.5"/>`;}
+    return {svg:`<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="display:block">${g}</svg>`, cross};
+  }
+
+  function render(){
+    const p=P();
+    const years=Math.max(p.tableYears,p.horizon);
+    const sim=simulate(p,p.appreciation,years);
+    const y=sim.y1, snap=sim.rows[p.horizon-1];
+    const be=breakeven(p), pay=paybackYears(p), mpay=payment(p);
+
+    $('mPayOut').innerHTML=`Monthly payment (P&I): <b>${fmt(mpay)}</b> · interest is deductible, principal builds equity`;
+
+    // summary
+    $('kNet').textContent=fmt(sim.netToday);
+    $('kCf').textContent=fmt(y.atcf); $('kCf').className='val '+(y.atcf>=0?'':'neg');
+    $('kCfNote').textContent=(y.atcf/p.value*100).toFixed(1)+'% yield, after tax';
+    $('kPay').textContent=pay?pay+' yrs':'>50 yrs';
+    $('kBe').textContent=pct(be*100);
+    const sellWins=snap.sellW>=snap.rentW, diff=Math.abs(snap.sellW-snap.rentW);
+    $('vWin').textContent=sellWins?'Selling wins':'Renting wins';
+    $('vWin').style.color=sellWins?'#9fe6c6':'#f0b39c';
+    $('vWhy').innerHTML=`by ~<b>${fmt(diff)}</b> at year ${p.horizon} (${(p.appreciation*100).toFixed(1)}% appreciation). `+
+      (sellWins?`The home must appreciate above ${pct(be*100)}/yr for renting to win.`:`That's above the ${pct(be*100)} break-even — weigh landlord risk &amp; illiquidity too.`);
+
+    // sell card
+    $('sSale').textContent=fmt(p.value);
+    $('sComm').textContent='-'+fmt(sim.comm); $('sConc').textContent='-'+fmt(sim.cc);
+    $('sClose').textContent='-'+fmt(sim.cl); $('sTransfer').textContent='-'+fmt(sim.tr);
+    $('sFixup').textContent='-'+fmt(sim.fix);
+    $('sTotalCosts').textContent='-'+fmt(sim.comm+sim.cl+sim.tr+sim.cc+sim.fix);
+    $('sPayoff').textContent='-'+fmt(p.mortgageBalance);
+    $('sGain').textContent=fmt(sim.taxableToday); $('sCgTax').textContent='-'+fmt(sim.cgTaxToday);
+    $('sNet').textContent=fmt(sim.netToday);
+    show('rowReloCredit', sim.sellReloCredit>0); $('sReloCredit').textContent='+'+fmt(sim.sellReloCredit);
+    show('rowReloMea', sim.sellMea>0); $('sReloMea').textContent='+'+fmt(sim.sellMea);
+    show('rowReloLump', sim.sellLump>0); $('sReloLump').textContent='+'+fmt(sim.sellLump);
+    show('rowReloClaw', (sim.sellClaw||0)>0.5); $('sReloClaw').textContent='-'+fmt(sim.sellClaw||0);
+
+    // rent card
+    $('rGross').textContent=fmt(y.rent); $('rVac').textContent='-'+fmt(y.vac); $('rEff').textContent=fmt(y.eff);
+    $('rHoa').textContent='-'+fmt(y.hoa); $('rFees').textContent='-'+fmt(y.hoaF+y.reg);
+    $('rTax').textContent='-'+fmt(y.ptax); $('rIns').textContent='-'+fmt(y.ins);
+    $('rRep').textContent='-'+fmt(y.rep); $('rCap').textContent='-'+fmt(y.capx);
+    $('rMgmt').textContent='-'+fmt(y.mgmt); $('rLease').textContent='-'+fmt(y.leasing);
+    $('rOther').textContent='-'+fmt(y.util+y.leg); $('rMort').textContent='-'+fmt(y.mc);
+    $('rPretax').textContent=fmt(y.pretax);
+    $('rAtcf').textContent=fmt(y.atcf); $('rAtcf').className=y.atcf>=0?'pos':'neg';
+    $('rYield').textContent=(y.atcf/p.value*100).toFixed(2)+'%';
+
+    // tax card
+    $('tDep').textContent=fmt(sim.depAnnual);
+    $('tTax').textContent=fmt(y.tax)+(y.tax===0?' (sheltered)':'');
+    $('tDepCum').textContent=fmt(snap.cumDep); $('tSusp').textContent=fmt(snap.susp);
+    $('tRecap').textContent=fmt(snap.recapture);
+    $('tS121').innerHTML=snap.s121t?'Exclusion applies <span class="pill ok">tax-free gain</span>':'Exclusion lost <span class="pill no">fully taxable</span>';
+    $('tPay').textContent=pay?pay+' years':'>50 years';
+
+    // decision card
+    $('dN').textContent=p.horizon; $('dN2').textContent=p.horizon;
+    $('dSell').textContent=fmt(snap.sellW); $('dRent').textContent=fmt(snap.rentW);
+    const mx=Math.max(snap.sellW,snap.rentW,1);
+    $('bSell').style.width=(snap.sellW/mx*100)+'%'; $('bRent').style.width=(snap.rentW/mx*100)+'%';
+    $('dNetN').textContent=fmt(snap.netSaleT); $('dFv').textContent=fmt(snap.invest);
+    $('dBe').textContent=pct(be*100);
+    show('rowDRelo', sim.rentRelo>0); $('dRelo').textContent='+'+fmt(snap.reloFV);
+
+    // Clawback awareness — now reflects the entered job tenure
+    const sc=sim.sellClaw||0, rc=sim.rentClaw||0;
+    const winOf=pk=>pk==='full'?24:(pk==='lump'?12:0);
+    const anyPkg=p.sellPkg!=='none'||p.rentPkg!=='none';
+    if(anyPkg){ show('clawNote',true);
+      if(sc>0.5||rc>0.5){
+        let parts=[];
+        if(sc>0.5)parts.push(`<b>${fmt(sc)}</b> on the sell path`);
+        if(rc>0.5)parts.push(`<b>${fmt(rc)}</b> on the rent path`);
+        $('clawNote').innerHTML=`<b>⚠ Clawback triggered:</b> at ${p.tenureMonths} months you're inside the window, so you'd repay ${parts.join(' and ')} — already subtracted above and from the wealth bars.`;
+      } else {
+        let wins=[];
+        if(p.sellPkg!=='none')wins.push(`${winOf(p.sellPkg)} mo (sell · ${p.sellPkg})`);
+        if(p.rentPkg!=='none'&&!(winOf(p.rentPkg)===winOf(p.sellPkg)&&p.sellPkg!=='none'))wins.push(`${winOf(p.rentPkg)} mo (rent · ${p.rentPkg})`);
+        $('clawNote').innerHTML=`<b>Clawback windows:</b> ${wins.join(', ')}. Your ${p.tenureMonths}-month plan clears them, so no repayment is modeled — lower "Months at new role" below a window to see the prorated hit.`;
+      }
+    } else show('clawNote',false);
+
+    // chart + table
+    const rows=sim.rows.slice(0,years);
+    const ch=buildChart(rows,p.horizon);
+    $('chart').innerHTML=ch.svg;
+    $('chartCap').innerHTML = ch.cross
+      ? `Renting overtakes selling around <b>year ${ch.cross.t}</b> at these assumptions (gold dot). Before that, selling-and-investing is ahead.`
+      : (rows[rows.length-1].lead<0
+          ? `Selling stays ahead for all ${rows.length} years at these assumptions — renting never catches up unless appreciation rises above the ${pct(be*100)} break-even.`
+          : `Renting is ahead across the whole projection at these assumptions.`);
+
+    $('tbl').className = p.mortgageBalance>0 ? '' : 'no-mort';
+    let html='';
+    rows.forEach(r=>{
+      const cls=[]; if(r.t===p.horizon)cls.push('target'); if(ch.cross&&r.t===ch.cross.t)cls.push('cross');
+      html+=`<tr class="${cls.join(' ')}">`+
+        `<td>${r.t}</td>`+
+        `<td>${fmt(r.value)}</td>`+
+        `<td class="mort-col">${fmt(r.bal)}</td>`+
+        `<td class="mort-col">${fmt(r.equity)}</td>`+
+        `<td class="${r.atcf<0?'lead-neg':''}">${fmt(r.atcf)}</td>`+
+        `<td>${fmt(r.invest)}</td>`+
+        `<td>${fmt(r.netSaleT)}</td>`+
+        `<td>${fmt(r.rentW)}</td>`+
+        `<td>${fmt(r.sellW)}</td>`+
+        `<td class="${r.lead>=0?'lead-pos':'lead-neg'}">${(r.lead>=0?'+':'')+fmt(r.lead)}</td>`+
+        `<td><span class="badge">${r.s121t?'✓':'—'}</span></td>`+
+      `</tr>`;
+    });
+    $('tbody').innerHTML=html;
+  }
+
+  function syncRelo(){
+    const sp=$('sellPkg').value, rp=$('rentPkg').value;
+    show('fullBox', sp==='full'||rp==='full');
+    show('lumpBox', sp==='lump'||rp==='lump');
+  }
+  function homeownerDefaults(){
+    const h=$('homeowner').value;
+    $('mea').value = h==='home'?3500:2000;
+    $('lumpSum').value = h==='home'?30000:20000;
+  }
+
+  fields.forEach(f=>$(f).addEventListener('input',render));
+  checks.forEach(c=>$(c).addEventListener('change',render));
+  $('filing').addEventListener('change',render);
+  ['sellPkg','rentPkg','homeowner'].forEach(id=>$(id).addEventListener('change',()=>{
+    if(id==='homeowner')homeownerDefaults();
+    syncRelo(); render();
+  }));
+  syncRelo();
+  render();
+})();
+</script>
+</body>
+</html>
